@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💰 Quản Lý Thu Chi Cá Nhân</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+:root {
+  --sky0: #f0f9ff;
+  --sky1: #e0f4ff;
+  --sky2: #bae6fd;
+  --sky3: #7dd3fc;
+  --blue:  #38bdf8;
+  --blue2: #0ea5e9;
+  --blue3: #0284c7;
+  --green: #34d399;
+  --green2:#10b981;
+  --green3:#065f46;
+  --red:   #fb7185;
+  --red2:  #f43f5e;
+  --red3:  #9f1239;
+  --yellow:#fbbf24;
+  --purple:#a78bfa;
+  --purple2:#7c3aed;
+  --white: #ffffff;
+  --text:  #0f2d4a;
+  --muted: #5b8db8;
+  --card-shadow: 0 4px 24px rgba(14,165,233,.13);
+  --r: 18px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: linear-gradient(160deg, #e0f4ff 0%, #f0fdf4 55%, #fef9ec 100%);
+  min-height: 100vh;
+  color: var(--text);
+}
+
+/* ── HEADER ────────────────────────────── */
+.header {
+  background: linear-gradient(135deg,#0284c7 0%,#0ea5e9 50%,#38bdf8 100%);
+  color:#fff; padding:18px 24px 22px; text-align:center;
+  box-shadow: 0 6px 30px rgba(14,165,233,.35);
+  position:sticky; top:0; z-index:200;
+}
+.header h1 { font-size:1.75rem; font-weight:900; letter-spacing:-.5px; }
+.header p  { font-size:.85rem; opacity:.88; margin-top:2px; }
+
+.ctrl-row {
+  display:flex; align-items:center; justify-content:center;
+  gap:10px; margin-top:14px; flex-wrap:wrap;
+}
+/* view tabs */
+.view-tabs { display:flex; gap:4px; background:rgba(255,255,255,.18); border-radius:30px; padding:4px; }
+.view-tab {
+  padding:6px 16px; border-radius:26px; border:none; font-family:'Nunito',sans-serif;
+  font-size:.85rem; font-weight:800; cursor:pointer; transition:all .2s; color:#fff;
+  background:transparent;
+}
+.view-tab.active { background:#fff; color:var(--blue3); }
+
+select, input[type=number].year-in {
+  padding:7px 14px; border-radius:30px; border:2px solid rgba(255,255,255,.45);
+  background:rgba(255,255,255,.18); color:#fff; font-family:'Nunito',sans-serif;
+  font-size:.88rem; font-weight:700; outline:none; cursor:pointer;
+  backdrop-filter:blur(4px);
+}
+select option { color:var(--text); background:#fff; }
+input[type=number].year-in { width:86px; }
+input[type=number].year-in::-webkit-inner-spin-button { display:none; }
+
+/* ── CONTAINER ─────────────────────────── */
+.wrap { max-width:1240px; margin:0 auto; padding:22px 14px 40px; }
+
+/* ── SUMMARY CARDS ─────────────────────── */
+.sum-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:22px; }
+.sum-card {
+  background:#fff; border-radius:var(--r); padding:18px 20px;
+  box-shadow:var(--card-shadow); text-align:center; position:relative; overflow:hidden;
+}
+.sum-card::after {
+  content:''; position:absolute; top:-28px; right:-28px;
+  width:76px; height:76px; border-radius:50%; opacity:.1;
+}
+.sum-card.inc::after  { background:var(--green); }
+.sum-card.exp::after  { background:var(--red); }
+.sum-card.bal::after  { background:var(--blue); }
+.sum-card .s-icon { font-size:1.9rem; margin-bottom:5px; }
+.sum-card .s-lbl  { font-size:.72rem; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:.5px; }
+.sum-card .s-val  { font-size:1.35rem; font-weight:900; margin-top:4px; }
+.sum-card.inc .s-val { color:var(--green2); }
+.sum-card.exp .s-val { color:var(--red2); }
+.sum-card.bal .s-val { color:var(--blue2); }
+
+/* ── PANELS (input) ────────────────────── */
+.panels { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:22px; }
+.panel {
+  background:#fff; border-radius:var(--r); padding:20px;
+  box-shadow:var(--card-shadow);
+}
+.panel-hdr {
+  display:flex; align-items:center; justify-content:space-between;
+  padding-bottom:12px; margin-bottom:14px;
+  border-bottom:2.5px dashed var(--sky2);
+}
+.panel-ttl { font-size:1rem; font-weight:900; display:flex; align-items:center; gap:7px; }
+.panel-ttl.i { color:var(--green2); }
+.panel-ttl.e { color:var(--red2); }
+
+/* chips */
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.chip {
+  padding:5px 12px; border-radius:30px; font-size:.78rem; font-weight:800;
+  cursor:pointer; border:2px solid transparent; transition:all .2s;
+  user-select:none; display:flex; align-items:center; gap:4px;
+}
+.chip:hover { transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,0,0,.1); }
+.chip.ec  { background:#fff1f2; border-color:#fecdd3; color:#be123c; }
+.chip.ec.on  { background:var(--red2); border-color:var(--red2); color:#fff; }
+.chip.ic  { background:#f0fdf4; border-color:#bbf7d0; color:#15803d; }
+.chip.ic.on  { background:var(--green2); border-color:var(--green2); color:#fff; }
+.chip .x { display:none; font-size:.65rem; margin-left:2px; opacity:.75; }
+.chip:hover .x { display:inline; }
+
+.add-grp-btn {
+  padding:4px 11px; border-radius:20px; font-size:.74rem; font-weight:800;
+  cursor:pointer; border:2px dashed; background:transparent; transition:all .2s;
+}
+.add-grp-btn.i { border-color:#6ee7b7; color:var(--green2); }
+.add-grp-btn.i:hover { background:#f0fdf4; }
+.add-grp-btn.e { border-color:#fca5a5; color:var(--red2); }
+.add-grp-btn.e:hover { background:#fff1f2; }
+
+/* input row */
+.in-row { display:flex; gap:7px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+.fi {
+  padding:9px 13px; border-radius:30px; border:2px solid var(--sky2);
+  font-family:'Nunito',sans-serif; font-size:.83rem; font-weight:600;
+  outline:none; color:var(--text); background:var(--sky0); transition:border .2s;
+}
+.fi:focus { border-color:var(--blue); background:#fff; }
+.fi-day   { width:80px; }
+.fi-amt   { width:130px; text-align:right; }
+.fi-note  { flex:1; min-width:90px; }
+.fi-btn {
+  padding:9px 16px; border-radius:30px; border:none; font-family:'Nunito',sans-serif;
+  font-size:.82rem; font-weight:900; cursor:pointer; transition:all .2s; white-space:nowrap;
+}
+.fi-btn.i { background:var(--green); color:#fff; }
+.fi-btn.i:hover { background:var(--green2); transform:translateY(-1px); }
+.fi-btn.e { background:var(--red); color:#fff; }
+.fi-btn.e:hover { background:var(--red2); transform:translateY(-1px); }
+
+/* tx list */
+.tx-list { margin-top:13px; max-height:260px; overflow-y:auto; }
+.tx-item {
+  display:flex; align-items:center; gap:8px; padding:9px 11px; border-radius:12px;
+  margin-bottom:5px; background:var(--sky0); transition:all .2s;
+}
+.tx-item:hover { transform:translateX(3px); }
+.tx-day  { font-size:.72rem; color:var(--muted); font-weight:800; min-width:38px; text-align:center; }
+.tx-cat  { font-size:.72rem; font-weight:800; padding:2px 8px; border-radius:12px; white-space:nowrap; }
+.tx-cat.i { background:#d1fae5; color:#065f46; }
+.tx-cat.e { background:#ffe4e6; color:#9f1239; }
+.tx-note { font-size:.74rem; color:var(--muted); flex:1; font-style:italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tx-amt  { font-weight:900; font-size:.87rem; white-space:nowrap; }
+.tx-amt.i { color:var(--green2); }
+.tx-amt.e { color:var(--red2); }
+.tx-del  { background:none; border:none; cursor:pointer; color:#fca5a5; font-size:.95rem; padding:2px 5px; border-radius:8px; transition:all .2s; }
+.tx-del:hover { background:#ffe4e6; color:var(--red2); }
+
+/* ── CHARTS SECTION ────────────────────── */
+.charts-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:22px; }
+.chart-card {
+  background:#fff; border-radius:var(--r); padding:20px;
+  box-shadow:var(--card-shadow); text-align:center;
+}
+.chart-ttl { font-size:.88rem; font-weight:900; margin-bottom:12px; }
+.chart-ttl.e { color:var(--red2); }
+.chart-ttl.i { color:var(--green2); }
+.chart-ttl.b { color:var(--blue2); }
+.chart-wrap  { position:relative; height:220px; }
+
+/* ── YEAR CHART ─────────────────────────── */
+.year-chart-card {
+  background:#fff; border-radius:var(--r); padding:22px;
+  box-shadow:var(--card-shadow); margin-bottom:22px;
+}
+.year-chart-ttl { font-size:1rem; font-weight:900; color:var(--blue2); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.year-chart-wrap { position:relative; height:280px; }
+
+/* ── ANALYSIS ───────────────────────────── */
+.analysis {
+  background:#fff; border-radius:var(--r); padding:24px;
+  box-shadow:var(--card-shadow); margin-bottom:22px;
+}
+.analysis-ttl { font-size:1rem; font-weight:900; color:var(--purple2); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+.score-row { display:flex; align-items:flex-start; gap:18px; flex-wrap:wrap; margin-bottom:14px; }
+.score-badge {
+  font-size:1.1rem; font-weight:900; padding:14px 20px; border-radius:16px;
+  text-align:center; min-width:110px; line-height:1.4;
+}
+.score-badge.great { background:#d1fae5; color:#065f46; }
+.score-badge.good  { background:#dbeafe; color:#1d4ed8; }
+.score-badge.warn  { background:#fef9c3; color:#a16207; }
+.score-badge.bad   { background:#ffe4e6; color:#9f1239; }
+.analysis-desc { flex:1; font-size:.88rem; line-height:1.85; color:var(--text); }
+.points { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:9px; margin-top:2px; }
+.pt {
+  padding:11px 14px; border-radius:12px; font-size:.8rem; font-weight:700; line-height:1.55;
+  display:flex; align-items:flex-start; gap:7px;
+}
+.pt.tip  { background:#ecfdf5; color:#065f46; }
+.pt.warn { background:#fef9c3; color:#854d0e; }
+.pt.good { background:#eff6ff; color:#1e40af; }
+.pt.bad  { background:#fff1f2; color:#9f1239; }
+
+/* ── MODAL ──────────────────────────────── */
+.overlay {
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.42);
+  z-index:500; align-items:center; justify-content:center; backdrop-filter:blur(5px);
+}
+.overlay.on { display:flex; }
+.modal {
+  background:#fff; border-radius:22px; padding:28px; width:320px;
+  box-shadow:0 20px 60px rgba(0,0,0,.22); animation:pop .2s ease;
+}
+@keyframes pop { from{transform:scale(.82);opacity:0} to{transform:scale(1);opacity:1} }
+.modal h3 { font-size:1rem; font-weight:900; margin-bottom:14px; }
+.modal input {
+  width:100%; padding:10px 14px; border-radius:12px; border:2px solid var(--sky2);
+  font-family:'Nunito',sans-serif; font-size:.88rem; outline:none; margin-bottom:10px; color:var(--text);
+}
+.modal input:focus { border-color:var(--blue); }
+.modal-icon { font-size:1.4rem; text-align:center; display:block; margin-bottom:6px; }
+.m-btns { display:flex; gap:9px; }
+.m-btn {
+  flex:1; padding:10px; border-radius:12px; border:none; font-family:'Nunito',sans-serif;
+  font-size:.88rem; font-weight:900; cursor:pointer; transition:all .2s;
+}
+.m-btn.ok { background:var(--blue); color:#fff; }
+.m-btn.ok:hover { background:var(--blue2); }
+.m-btn.cl { background:var(--sky1); color:var(--text); }
+.m-btn.cl:hover { background:var(--sky2); }
+
+/* ── EDIT MODAL ─────────────────────────── */
+.edit-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; padding:8px 10px; background:var(--sky0); border-radius:10px; }
+.edit-row span { flex:1; font-size:.85rem; font-weight:700; }
+.edit-row input { margin:0; flex:2; }
+.edit-row button { padding:5px 10px; border-radius:8px; border:none; cursor:pointer; font-size:.8rem; font-weight:800; }
+.edit-row .save-btn { background:var(--green); color:#fff; }
+.edit-row .del-btn  { background:var(--red); color:#fff; }
+
+/* ── TOAST ──────────────────────────────── */
+.toast {
+  position:fixed; bottom:22px; right:22px; background:var(--text); color:#fff;
+  padding:11px 20px; border-radius:30px; font-size:.83rem; font-weight:700;
+  z-index:9999; transform:translateY(80px); opacity:0; transition:all .3s;
+  box-shadow:0 8px 24px rgba(0,0,0,.2);
+}
+.toast.on { transform:translateY(0); opacity:1; }
+
+/* ── EMPTY ──────────────────────────────── */
+.empty { text-align:center; padding:24px 10px; color:var(--muted); font-size:.83rem; }
+.empty .ei { font-size:2.2rem; margin-bottom:7px; }
+
+/* scrollbar */
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:var(--sky1); border-radius:10px; }
+::-webkit-scrollbar-thumb { background:var(--sky3); border-radius:10px; }
+
+/* hidden section */
+.section { display:none; }
+.section.on { display:block; }
+
+/* ── RESPONSIVE ─────────────────────────── */
+@media(max-width:800px){
+  .sum-row   { grid-template-columns:1fr; }
+  .panels    { grid-template-columns:1fr; }
+  .charts-row{ grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <h1>💰 Quản Lý Thu Chi Cá Nhân</h1>
+  <p>Theo dõi tài chính mỗi ngày – Sống vui, sống khoẻ! 🌈</p>
+  <div class="ctrl-row">
+    <div class="view-tabs">
+      <button class="view-tab active" id="tabMonth" onclick="switchView('month')">📅 Theo Tháng</button>
+      <button class="view-tab"        id="tabYear"  onclick="switchView('year')">📆 Theo Năm</button>
+    </div>
+    <div id="monthCtrl">
+      <select id="selM">
+        <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
+        <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
+        <option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+        <option value="7">Tháng 7</option><option value="8">Tháng 8</option>
+        <option value="9">Tháng 9</option><option value="10">Tháng 10</option>
+        <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+      </select>
+    </div>
+    <input type="number" class="year-in" id="selY" min="2000" max="2100">
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ── SUMMARY ── -->
+  <div class="sum-row">
+    <div class="sum-card inc">
+      <div class="s-icon">💚</div>
+      <div class="s-lbl" id="sumIncLbl">Tổng Thu Tháng</div>
+      <div class="s-val" id="sumInc">0 ₫</div>
+    </div>
+    <div class="sum-card exp">
+      <div class="s-icon">❤️</div>
+      <div class="s-lbl" id="sumExpLbl">Tổng Chi Tháng</div>
+      <div class="s-val" id="sumExp">0 ₫</div>
+    </div>
+    <div class="sum-card bal">
+      <div class="s-icon">💙</div>
+      <div class="s-lbl" id="sumBalLbl">Số Dư</div>
+      <div class="s-val" id="sumBal">0 ₫</div>
+    </div>
+  </div>
+
+  <!-- ── MONTH SECTION ── -->
+  <div class="section on" id="secMonth">
+
+    <!-- input panels -->
+    <div class="panels">
+
+      <!-- INCOME -->
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-ttl i">💚 Nhóm Thu</div>
+          <div style="display:flex;gap:6px">
+            <button class="add-grp-btn i" onclick="openEdit('income')">✏️ Sửa</button>
+            <button class="add-grp-btn i" onclick="openAddCat('income')">+ Thêm</button>
+          </div>
+        </div>
+        <div class="chips" id="icChips"></div>
+        <div class="in-row">
+          <input type="number" class="fi fi-day"  id="iDay"  placeholder="Ngày" min="1" max="31">
+          <input type="number" class="fi fi-amt"  id="iAmt"  placeholder="Số tiền (₫)">
+          <input type="text"   class="fi fi-note" id="iNote" placeholder="Ghi chú...">
+          <button class="fi-btn i" onclick="addTx('income')">✅ Thêm</button>
+        </div>
+        <div class="tx-list" id="iList"></div>
+      </div>
+
+      <!-- EXPENSE -->
+      <div class="panel">
+        <div class="panel-hdr">
+          <div class="panel-ttl e">❤️ Nhóm Chi</div>
+          <div style="display:flex;gap:6px">
+            <button class="add-grp-btn e" onclick="openEdit('expense')">✏️ Sửa</button>
+            <button class="add-grp-btn e" onclick="openAddCat('expense')">+ Thêm</button>
+          </div>
+        </div>
+        <div class="chips" id="ecChips"></div>
+        <div class="in-row">
+          <input type="number" class="fi fi-day"  id="eDay"  placeholder="Ngày" min="1" max="31">
+          <input type="number" class="fi fi-amt"  id="eAmt"  placeholder="Số tiền (₫)">
+          <input type="text"   class="fi fi-note" id="eNote" placeholder="Ghi chú...">
+          <button class="fi-btn e" onclick="addTx('expense')">➕ Thêm</button>
+        </div>
+        <div class="tx-list" id="eList"></div>
+      </div>
+
+    </div><!-- /panels -->
+
+    <!-- 3 CHARTS (month) -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-ttl e">🔴 Phân Bổ Chi Tiêu</div>
+        <div class="chart-wrap"><canvas id="cExp"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-ttl i">🟢 Phân Bổ Thu Nhập</div>
+        <div class="chart-wrap"><canvas id="cInc"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-ttl b">📊 Thu & Chi Theo Tháng (6 tháng)</div>
+        <div class="chart-wrap"><canvas id="cBar"></canvas></div>
+      </div>
+    </div>
+
+  </div><!-- /secMonth -->
+
+  <!-- ── YEAR SECTION ── -->
+  <div class="section" id="secYear">
+    <div class="year-chart-card">
+      <div class="year-chart-ttl">📆 Tổng Quan Thu Chi Cả Năm <span id="yearLabel"></span></div>
+      <div class="year-chart-wrap"><canvas id="cYear"></canvas></div>
+    </div>
+    <!-- 2 pie charts for year -->
+    <div class="charts-row" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="chart-card">
+        <div class="chart-ttl e">🔴 Chi Tiêu Theo Nhóm (Năm)</div>
+        <div class="chart-wrap"><canvas id="cYExp"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-ttl i">🟢 Thu Nhập Theo Nhóm (Năm)</div>
+        <div class="chart-wrap"><canvas id="cYInc"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-ttl b">💡 Số Dư Từng Tháng</div>
+        <div class="chart-wrap"><canvas id="cYBal"></canvas></div>
+      </div>
+    </div>
+  </div><!-- /secYear -->
+
+  <!-- ANALYSIS -->
+  <div class="analysis">
+    <div class="analysis-ttl">🤖 Đánh Giá & Nhận Xét Tài Chính</div>
+    <div class="score-row">
+      <div class="score-badge" id="scoreBadge">—</div>
+      <div class="analysis-desc" id="analysisDesc">Hãy nhập thu chi để xem đánh giá tài chính! 📝</div>
+    </div>
+    <div class="points" id="analysisPoints"></div>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- ADD CATEGORY MODAL -->
+<div class="overlay" id="addOverlay">
+  <div class="modal">
+    <span class="modal-icon" id="addIcon">✨</span>
+    <h3 id="addTitle">Thêm Nhóm Mới</h3>
+    <input type="text" id="addEmoji" placeholder="Emoji (vd: 🎮)">
+    <input type="text" id="addName"  placeholder="Tên nhóm (vd: Giải trí)">
+    <div class="m-btns">
+      <button class="m-btn cl" onclick="closeOverlay('addOverlay')">❌ Huỷ</button>
+      <button class="m-btn ok" onclick="confirmAdd()">✅ Thêm</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT CATEGORIES MODAL -->
+<div class="overlay" id="editOverlay">
+  <div class="modal" style="width:380px;max-height:80vh;overflow-y:auto">
+    <h3 id="editTitle">✏️ Chỉnh Sửa Nhóm</h3>
+    <div id="editList"></div>
+    <div class="m-btns" style="margin-top:12px">
+      <button class="m-btn cl" onclick="closeOverlay('editOverlay')">✅ Xong</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════
+   DATA
+═══════════════════════════════════════ */
+const now = new Date();
+let curM = now.getMonth()+1, curY = now.getFullYear();
+let view = 'month'; // 'month' | 'year'
+let selIC = null, selEC = null, modalType = 'income';
+
+let incCats = [
+  {e:'💼',n:'Tiền lương'},{e:'💡',n:'Thu nhập phụ'},{e:'📈',n:'Đầu tư'},{e:'🎁',n:'Được cho'}
+];
+let expCats = [
+  {e:'🍜',n:'Ăn uống'},{e:'🏥',n:'Sức khỏe'},{e:'💄',n:'Làm đẹp'},
+  {e:'✈️',n:'Du lịch'},{e:'🚗',n:'Đi lại'},{e:'📚',n:'Giáo dục'},{e:'📦',n:'Khác'}
+];
+
+let txs = JSON.parse(localStorage.getItem('txs_v2')||'[]');
+
+/* chart instances */
+let chExp=null,chInc=null,chBar=null,chYear=null,chYExp=null,chYInc=null,chYBal=null;
+
+const PIE_COLORS_E = ['#fb7185','#fbbf24','#a78bfa','#38bdf8','#f97316','#ec4899','#14b8a6','#8b5cf6','#f59e0b','#84cc16'];
+const PIE_COLORS_I = ['#34d399','#38bdf8','#a78bfa','#fbbf24','#fb7185','#10b981','#3b82f6','#f59e0b','#6366f1','#22d3ee'];
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+function init(){
+  document.getElementById('selM').value = curM;
+  document.getElementById('selY').value = curY;
+  renderChips();
+  render();
+}
+
+function save(){ localStorage.setItem('txs_v2',JSON.stringify(txs)); }
+
+/* ═══════════════════════════════════════
+   VIEW TOGGLE
+═══════════════════════════════════════ */
+function switchView(v){
+  view = v;
+  document.getElementById('tabMonth').classList.toggle('active', v==='month');
+  document.getElementById('tabYear').classList.toggle('active',  v==='year');
+  document.getElementById('secMonth').classList.toggle('on', v==='month');
+  document.getElementById('secYear').classList.toggle('on',  v==='year');
+  document.getElementById('monthCtrl').style.display = v==='month' ? '' : 'none';
+  // update summary labels
+  document.getElementById('sumIncLbl').textContent = v==='month' ? 'Tổng Thu Tháng' : 'Tổng Thu Năm';
+  document.getElementById('sumExpLbl').textContent = v==='month' ? 'Tổng Chi Tháng' : 'Tổng Chi Năm';
+  render();
+}
+
+/* ═══════════════════════════════════════
+   CHIPS
+═══════════════════════════════════════ */
+function renderChips(){
+  const ic = document.getElementById('icChips');
+  const ec = document.getElementById('ecChips');
+  ic.innerHTML=''; ec.innerHTML='';
+  incCats.forEach((c,i)=>{
+    const d=document.createElement('div');
+    d.className='chip ic'+(selIC===i?' on':'');
+    d.innerHTML=`${c.e} ${c.n}`;
+    d.onclick=()=>{ selIC = selIC===i?null:i; renderChips(); };
+    ic.appendChild(d);
+  });
+  expCats.forEach((c,i)=>{
+    const d=document.createElement('div');
+    d.className='chip ec'+(selEC===i?' on':'');
+    d.innerHTML=`${c.e} ${c.n}`;
+    d.onclick=()=>{ selEC = selEC===i?null:i; renderChips(); };
+    ec.appendChild(d);
+  });
+}
+
+/* ═══════════════════════════════════════
+   ADD CATEGORY MODAL
+═══════════════════════════════════════ */
+function openAddCat(type){
+  modalType=type;
+  document.getElementById('addTitle').textContent = type==='income'?'💚 Thêm Nhóm Thu':'❤️ Thêm Nhóm Chi';
+  document.getElementById('addIcon').textContent  = type==='income'?'💚':'❤️';
+  document.getElementById('addEmoji').value='';
+  document.getElementById('addName').value='';
+  document.getElementById('addOverlay').classList.add('on');
+}
+function confirmAdd(){
+  const name=document.getElementById('addName').value.trim();
+  const emoji=document.getElementById('addEmoji').value.trim()||(modalType==='income'?'💰':'💸');
+  if(!name){ toast('⚠️ Vui lòng nhập tên nhóm!'); return; }
+  if(modalType==='income') incCats.push({e:emoji,n:name});
+  else expCats.push({e:emoji,n:name});
+  closeOverlay('addOverlay');
+  renderChips();
+  toast('✅ Đã thêm nhóm thành công!');
+}
+
+/* ═══════════════════════════════════════
+   EDIT CATEGORIES MODAL
+═══════════════════════════════════════ */
+function openEdit(type){
+  modalType=type;
+  const cats = type==='income' ? incCats : expCats;
+  document.getElementById('editTitle').textContent = type==='income'?'✏️ Sửa Nhóm Thu':'✏️ Sửa Nhóm Chi';
+  const el = document.getElementById('editList');
+  el.innerHTML='';
+  cats.forEach((c,i)=>{
+    const row=document.createElement('div');
+    row.className='edit-row';
+    row.innerHTML=`
+      <span>${c.e}</span>
+      <input type="text" value="${c.n}" id="ec_${i}" style="margin:0;padding:5px 8px;font-size:.8rem">
+      <button class="save-btn" onclick="saveEditCat('${type}',${i})">💾</button>
+      <button class="del-btn"  onclick="delCat('${type}',${i})">🗑️</button>`;
+    el.appendChild(row);
+  });
+  document.getElementById('editOverlay').classList.add('on');
+}
+function saveEditCat(type,i){
+  const v=document.getElementById(`ec_${i}`).value.trim();
+  if(!v){ toast('⚠️ Tên không được rỗng!'); return; }
+  if(type==='income') incCats[i].n=v; else expCats[i].n=v;
+  renderChips(); render(); toast('✅ Đã lưu!');
+}
+function delCat(type,i){
+  if(!confirm('Xoá nhóm này?')) return;
+  if(type==='income'){ incCats.splice(i,1); if(selIC===i) selIC=null; }
+  else { expCats.splice(i,1); if(selEC===i) selEC=null; }
+  openEdit(type); renderChips();
+}
+
+function closeOverlay(id){ document.getElementById(id).classList.remove('on'); }
+
+/* ═══════════════════════════════════════
+   ADD TRANSACTION
+═══════════════════════════════════════ */
+function addTx(type){
+  const pre = type==='income'?'i':'e';
+  const dayEl  = document.getElementById(pre+'Day');
+  const amtEl  = document.getElementById(pre+'Amt');
+  const noteEl = document.getElementById(pre+'Note');
+  const selCat = type==='income' ? selIC : selEC;
+  const cats   = type==='income' ? incCats : expCats;
+
+  const day = parseInt(dayEl.value);
+  const amt = parseFloat(amtEl.value);
+  const note= noteEl.value.trim();
+
+  if(!day||day<1||day>31){ toast('⚠️ Ngày không hợp lệ (1-31)!'); return; }
+  if(!amt||amt<=0)        { toast('⚠️ Số tiền phải lớn hơn 0!'); return; }
+  if(selCat===null)       { toast(`⚠️ Chọn nhóm ${type==='income'?'thu':'chi'} trước!`); return; }
+
+  txs.push({
+    id:Date.now(), type, day, amt, note,
+    cat:cats[selCat].n, emoji:cats[selCat].e,
+    month:curM, year:curY
+  });
+  save();
+  dayEl.value=''; amtEl.value=''; noteEl.value='';
+  render();
+  toast(`${cats[selCat].e} Đã thêm: ${fmt(amt)} ₫`);
+}
+
+function delTx(id){
+  txs=txs.filter(t=>t.id!==id);
+  save(); render();
+  toast('🗑️ Đã xoá giao dịch!');
+}
+
+/* ═══════════════════════════════════════
+   FILTER HELPERS
+═══════════════════════════════════════ */
+function mFilter(){ return txs.filter(t=>t.month===curM && t.year===curY); }
+function yFilter(){ return txs.filter(t=>t.year===curY); }
+
+/* ═══════════════════════════════════════
+   MASTER RENDER
+═══════════════════════════════════════ */
+function render(){
+  if(view==='month'){
+    const data=mFilter();
+    updateSummary(data);
+    renderLists(data);
+    renderMonthCharts(data);
+  } else {
+    const data=yFilter();
+    updateSummary(data);
+    renderYearCharts(data);
+  }
+  renderAnalysis();
+}
+
+/* ═══════════════════════════════════════
+   SUMMARY
+═══════════════════════════════════════ */
+function updateSummary(data){
+  const tI=data.filter(t=>t.type==='income').reduce((s,t)=>s+t.amt,0);
+  const tE=data.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amt,0);
+  const bal=tI-tE;
+  document.getElementById('sumInc').textContent=fmt(tI)+' ₫';
+  document.getElementById('sumExp').textContent=fmt(tE)+' ₫';
+  const balEl=document.getElementById('sumBal');
+  balEl.textContent=(bal>=0?'+':'')+fmt(bal)+' ₫';
+  balEl.style.color=bal>=0?'var(--green2)':'var(--red2)';
+}
+
+/* ═══════════════════════════════════════
+   TX LISTS
+═══════════════════════════════════════ */
+function renderLists(data){
+  const inc=data.filter(t=>t.type==='income').sort((a,b)=>b.day-a.day);
+  const exp=data.filter(t=>t.type==='expense').sort((a,b)=>b.day-a.day);
+  const il=document.getElementById('iList');
+  const el=document.getElementById('eList');
+
+  il.innerHTML=inc.length?'':'<div class="empty"><div class="ei">📭</div>Chưa có thu nhập nào</div>';
+  el.innerHTML=exp.length?'':'<div class="empty"><div class="ei">📭</div>Chưa có chi tiêu nào</div>';
+
+  inc.forEach(t=>{
+    const d=document.createElement('div'); d.className='tx-item';
+    d.innerHTML=`<span class="tx-day">Ngày ${t.day}</span><span class="tx-cat i">${t.emoji} ${t.cat}</span><span class="tx-note">${t.note||''}</span><span class="tx-amt i">+${fmt(t.amt)} ₫</span><button class="tx-del" onclick="delTx(${t.id})">🗑️</button>`;
+    il.appendChild(d);
+  });
+  exp.forEach(t=>{
+    const d=document.createElement('div'); d.className='tx-item';
+    d.innerHTML=`<span class="tx-day">Ngày ${t.day}</span><span class="tx-cat e">${t.emoji} ${t.cat}</span><span class="tx-note">${t.note||''}</span><span class="tx-amt e">-${fmt(t.amt)} ₫</span><button class="tx-del" onclick="delTx(${t.id})">🗑️</button>`;
+    el.appendChild(d);
+  });
+}
+
+/* ═══════════════════════════════════════
+   MONTH CHARTS
+═══════════════════════════════════════ */
+function renderMonthCharts(data){
+  const exp=data.filter(t=>t.type==='expense');
+  const inc=data.filter(t=>t.type==='income');
+  const expByCat=groupCat(exp), incByCat=groupCat(inc);
+
+  // Pie Expense
+  if(chExp) chExp.destroy();
+  chExp=makePie('cExp', expByCat, PIE_COLORS_E, 'Chi tiêu');
+
+  // Pie Income
+  if(chInc) chInc.destroy();
+  chInc=makePie('cInc', incByCat, PIE_COLORS_I, 'Thu nhập');
+
+  // Bar: 6 months
+  if(chBar) chBar.destroy();
+  const labels=[], incD=[], expD=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(curY,curM-1-i,1);
+    const mm=d.getMonth()+1, yy=d.getFullYear();
+    labels.push(`T${mm}/${String(yy).slice(2)}`);
+    incD.push(txs.filter(t=>t.type==='income'&&t.month===mm&&t.year===yy).reduce((s,t)=>s+t.amt,0)/1e6);
+    expD.push(txs.filter(t=>t.type==='expense'&&t.month===mm&&t.year===yy).reduce((s,t)=>s+t.amt,0)/1e6);
+  }
+  chBar=makeBar('cBar', labels, incD, expD);
+}
+
+/* ═══════════════════════════════════════
+   YEAR CHARTS
+═══════════════════════════════════════ */
+function renderYearCharts(data){
+  document.getElementById('yearLabel').textContent = curY;
+  const MN=['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
+  const incD=[], expD=[], balD=[];
+  for(let m=1;m<=12;m++){
+    const md=data.filter(t=>t.month===m);
+    const tI=md.filter(t=>t.type==='income').reduce((s,t)=>s+t.amt,0);
+    const tE=md.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amt,0);
+    incD.push(tI/1e6); expD.push(tE/1e6); balD.push((tI-tE)/1e6);
+  }
+
+  // Bar year
+  if(chYear) chYear.destroy();
+  const ctx=document.getElementById('cYear').getContext('2d');
+  chYear=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:MN,
+      datasets:[
+        {label:'💚 Thu (triệu ₫)',data:incD,backgroundColor:'rgba(52,211,153,.82)',borderRadius:7},
+        {label:'❤️ Chi (triệu ₫)',data:expD,backgroundColor:'rgba(251,113,133,.82)',borderRadius:7}
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'Nunito',size:11},padding:12}}},
+      scales:{
+        y:{ticks:{font:{family:'Nunito',size:10},callback:v=>v+'tr'},grid:{color:'#e0f4ff'}},
+        x:{ticks:{font:{family:'Nunito',size:11}},grid:{display:false}}
+      }
+    }
+  });
+
+  // Pie Expense (year)
+  if(chYExp) chYExp.destroy();
+  chYExp=makePie('cYExp',groupCat(data.filter(t=>t.type==='expense')),PIE_COLORS_E,'Chi');
+
+  // Pie Income (year)
+  if(chYInc) chYInc.destroy();
+  chYInc=makePie('cYInc',groupCat(data.filter(t=>t.type==='income')),PIE_COLORS_I,'Thu');
+
+  // Balance line
+  if(chYBal) chYBal.destroy();
+  const ctx3=document.getElementById('cYBal').getContext('2d');
+  chYBal=new Chart(ctx3,{
+    type:'line',
+    data:{
+      labels:MN,
+      datasets:[{
+        label:'Số dư (triệu ₫)', data:balD,
+        borderColor:'#38bdf8', backgroundColor:'rgba(56,189,248,.12)',
+        borderWidth:2.5, pointBackgroundColor:'#0ea5e9', pointRadius:4, fill:true, tension:.35
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'Nunito',size:10}}}},
+      scales:{
+        y:{ticks:{font:{family:'Nunito',size:10},callback:v=>v+'tr'},grid:{color:'#e0f4ff'}},
+        x:{ticks:{font:{family:'Nunito',size:11}},grid:{display:false}}
+      }
+    }
+  });
+}
+
+/* ═══════════════════════════════════════
+   ANALYSIS
+═══════════════════════════════════════ */
+function renderAnalysis(){
+  const data = view==='month' ? mFilter() : yFilter();
+  const tI=data.filter(t=>t.type==='income').reduce((s,t)=>s+t.amt,0);
+  const tE=data.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amt,0);
+  const bal=tI-tE;
+  const badge=document.getElementById('scoreBadge');
+  const desc=document.getElementById('analysisDesc');
+  const pts=document.getElementById('analysisPoints');
+  pts.innerHTML='';
+
+  const period = view==='month' ? `tháng ${curM}/${curY}` : `năm ${curY}`;
+
+  if(tI===0&&tE===0){
+    badge.className='score-badge good'; badge.textContent='📝 Trống';
+    desc.textContent=`Chưa có dữ liệu ${period}. Hãy nhập thu chi để xem đánh giá! 🌟`; return;
+  }
+
+  const ratio = tI>0 ? tE/tI : 999;
+  const savePct = tI>0 ? ((tI-tE)/tI*100) : 0;
+
+  let cls,label,emoji,summary;
+  if(ratio<.5)      { cls='great'; label='🏆 Xuất Sắc'; emoji='🌟'; summary=`Tiết kiệm được ${savePct.toFixed(0)}% thu nhập — tài chính rất khoẻ mạnh!`; }
+  else if(ratio<.7) { cls='good';  label='😊 Tốt';      emoji='👍'; summary=`Tỷ lệ tiết kiệm ${savePct.toFixed(0)}% — quản lý khá tốt, tiếp tục phát huy!`; }
+  else if(ratio<.9) { cls='warn';  label='⚠️ Chú Ý';   emoji='⚠️'; summary=`Chi tiêu chiếm ${(ratio*100).toFixed(0)}% thu nhập — nên cắt giảm bớt.`; }
+  else if(ratio<=1) { cls='warn';  label='😰 Nguy';     emoji='🚨'; summary='Chi tiêu gần bằng thu nhập — rất nguy hiểm, cần rà soát ngay!'; }
+  else              { cls='bad';   label='🆘 Bội Chi';  emoji='🆘'; summary=`Chi vượt thu ${fmt(Math.abs(bal))} ₫ — cần giảm chi khẩn cấp!`; }
+
+  badge.className=`score-badge ${cls}`; badge.textContent=label;
+  desc.textContent=`${emoji} ${summary} (${period})`;
+
+  // Points
+  const tips=[];
+  if(savePct>=20) tips.push({c:'good',i:'🎉',m:`Tiết kiệm ${savePct.toFixed(0)}% — đạt chuẩn khuyến nghị (≥20%)!`});
+  if(bal>0)       tips.push({c:'tip', i:'💡',m:`Còn dư ${fmt(bal)} ₫ — hãy đầu tư hoặc gửi tiết kiệm!`});
+  if(ratio>.9&&tI>0) tips.push({c:'bad',i:'🚨',m:'Chi tiêu quá cao. Hãy lập ngân sách chi tiết!'});
+
+  // Biggest expense cat
+  const expByCat={};
+  data.filter(t=>t.type==='expense').forEach(t=>{ expByCat[t.cat]=(expByCat[t.cat]||0)+t.amt; });
+  const bigE=Object.entries(expByCat).sort((a,b)=>b[1]-a[1])[0];
+  if(bigE) tips.push({c:'warn',i:'📊',m:`Chi nhiều nhất: ${bigE[0]} — ${fmt(bigE[1])} ₫ (${tE>0?(bigE[1]/tE*100).toFixed(0):0}% tổng chi)`});
+
+  // Biggest income cat
+  const incByCat={};
+  data.filter(t=>t.type==='income').forEach(t=>{ incByCat[t.cat]=(incByCat[t.cat]||0)+t.amt; });
+  const bigI=Object.entries(incByCat).sort((a,b)=>b[1]-a[1])[0];
+  if(bigI) tips.push({c:'good',i:'💚',m:`Nguồn thu lớn nhất: ${bigI[0]} — ${fmt(bigI[1])} ₫`});
+
+  if(view==='month'){
+    const dim=new Date(curY,curM,0).getDate();
+    const maxDay=Math.max(...data.map(t=>t.day),0);
+    if(maxDay>0&&maxDay<dim){
+      const projE=(tE/maxDay)*dim;
+      tips.push({c:projE>tI?'bad':'tip',i:'📅',m:`Dự báo chi cả tháng: ~${fmt(Math.round(projE))} ₫`});
+    }
+  }
+  if(view==='year'){
+    const months=new Set(data.map(t=>t.month)).size;
+    if(months>0){
+      tips.push({c:'tip',i:'📆',m:`Có dữ liệu ${months}/12 tháng trong năm ${curY}`});
+    }
+  }
+
+  tips.forEach(t=>{
+    const d=document.createElement('div');
+    d.className=`pt ${t.c}`;
+    d.innerHTML=`<span>${t.i}</span><span>${t.m}</span>`;
+    pts.appendChild(d);
+  });
+}
+
+/* ═══════════════════════════════════════
+   CHART HELPERS
+═══════════════════════════════════════ */
+function groupCat(arr){
+  const r={};
+  arr.forEach(t=>{ const k=t.emoji+' '+t.cat; r[k]=(r[k]||0)+t.amt; });
+  return r;
+}
+function makePie(id, obj, colors, label){
+  const ctx=document.getElementById(id).getContext('2d');
+  ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+  const keys=Object.keys(obj);
+  if(!keys.length){
+    ctx.font='13px Nunito'; ctx.fillStyle='#94a3b8'; ctx.textAlign='center';
+    ctx.fillText('Chưa có dữ liệu 📭', ctx.canvas.width/2, ctx.canvas.height/2);
+    return null;
+  }
+  return new Chart(ctx,{
+    type:'pie',
+    data:{labels:keys,datasets:[{data:Object.values(obj),backgroundColor:colors,borderWidth:2.5,borderColor:'#fff'}]},
+    options:{plugins:{legend:{position:'bottom',labels:{font:{family:'Nunito',size:9},padding:7}}},maintainAspectRatio:false}
+  });
+}
+function makeBar(id, labels, incD, expD){
+  const ctx=document.getElementById(id).getContext('2d');
+  return new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        {label:'💚 Thu (triệu)',data:incD,backgroundColor:'rgba(52,211,153,.82)',borderRadius:6},
+        {label:'❤️ Chi (triệu)',data:expD,backgroundColor:'rgba(251,113,133,.82)',borderRadius:6}
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'Nunito',size:10},padding:8}}},
+      scales:{
+        y:{ticks:{font:{family:'Nunito',size:9},callback:v=>v+'tr'},grid:{color:'#e0f4ff'}},
+        x:{ticks:{font:{family:'Nunito',size:10}},grid:{display:false}}
+      }
+    }
+  });
+}
+
+/* ═══════════════════════════════════════
+   UTILS
+═══════════════════════════════════════ */
+function fmt(n){ return Math.round(n).toLocaleString('vi-VN'); }
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  clearTimeout(t._to);
+  t._to=setTimeout(()=>t.classList.remove('on'),2600);
+}
+
+/* ═══════════════════════════════════════
+   EVENTS
+═══════════════════════════════════════ */
+document.getElementById('selM').addEventListener('change',e=>{ curM=+e.target.value; render(); });
+document.getElementById('selY').addEventListener('change',e=>{ curY=+e.target.value; render(); });
+['addOverlay','editOverlay'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{ if(e.target===document.getElementById(id)) closeOverlay(id); });
+});
+document.getElementById('addName').addEventListener('keydown',e=>{ if(e.key==='Enter') confirmAdd(); });
+['iAmt','iNote','eAmt','eNote'].forEach(id=>{
+  document.getElementById(id).addEventListener('keydown',e=>{
+    if(e.key==='Enter') addTx(id.startsWith('i')?'income':'expense');
+  });
+});
+
+/* ═══════════════════════════════════════
+   BOOT
+═══════════════════════════════════════ */
+init();
+</script>
+</body>
+</html>
